@@ -21,12 +21,14 @@ def get_connection():
     """Crea y retorna una conexión a SQLite"""
     try:
         conn = sqlite3.connect(DB_NAME)
+        conn.row_factory = sqlite3.Row  # opcional: acceder por nombre de columna
         return conn
     except Exception as e:
         print(f"Error conectando a SQLite: {e}")
         return None
 
 def require_login():
+    """Protege rutas: si no hay sesión, redirige al login"""
     if 'user_id' not in session:
         flash('Inicia sesión primero', 'warning')
         return False
@@ -40,6 +42,7 @@ def init_db():
         if conn:
             cursor = conn.cursor()
 
+            # Tabla usuarios
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,6 +53,7 @@ def init_db():
                 )
             """)
 
+            # Tabla productos
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS productos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,7 +82,7 @@ def verificar_recaptcha(respuesta_recaptcha):
     except:
         return False
 
-# ==================== RUTAS ====================
+# ==================== RUTAS AUTH ====================
 @app.route('/')
 def inicio():
     return render_template('inicio.html')
@@ -96,13 +100,13 @@ def login():
             user = cursor.fetchone()
             conn.close()
 
-            if user and check_password_hash(user[2], password):
-                session['user_id'] = user[0]
-                session['user_name'] = user[1]
+            if user and check_password_hash(user['password'], password):
+                session['user_id'] = user['id']
+                session['user_name'] = user['nombre']
                 return redirect(url_for('dashboard'))
             else:
                 flash('Email o contraseña incorrectos', 'danger')
-        except Exception as e:
+        except Exception:
             flash('Error en el sistema', 'danger')
 
     return render_template('login.html')
@@ -135,7 +139,7 @@ def register():
         if not re.match(email_regex, email):
             errores.append('Ingresa un correo válido.')
 
-        # Password: 8-20 + mayus + minus + num (sin símbolos)
+        # Password (sin símbolos)
         password_regex = r"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,20}$"
         if not re.match(password_regex, password):
             errores.append('La contraseña debe tener: 8-20 caracteres, Mayúscula, Minúscula y Número.')
@@ -180,27 +184,30 @@ def register():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        flash('Inicia sesión primero', 'warning')
+    if not require_login():
         return redirect(url_for('login'))
 
-    # Estadísticas de productos
+    # Estadísticas de productos (opcionales)
+    total_productos = 0
+    productos_activos = 0
+    total_stock = 0
+
     try:
         conn = get_connection()
         cur = conn.cursor()
 
-        cur.execute("SELECT COUNT(*) FROM productos")
-        total_productos = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) AS c FROM productos")
+        total_productos = cur.fetchone()['c']
 
-        cur.execute("SELECT COUNT(*) FROM productos WHERE activo = 1")
-        productos_activos = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) AS c FROM productos WHERE activo = 1")
+        productos_activos = cur.fetchone()['c']
 
-        cur.execute("SELECT IFNULL(SUM(stock),0) FROM productos")
-        total_stock = cur.fetchone()[0]
+        cur.execute("SELECT IFNULL(SUM(stock),0) AS s FROM productos")
+        total_stock = cur.fetchone()['s']
 
         conn.close()
     except:
-        total_productos, productos_activos, total_stock = 0, 0, 0
+        pass
 
     return render_template(
         'dashboard.html',
@@ -223,18 +230,50 @@ def productos_list():
     if not require_login():
         return redirect(url_for('login'))
 
+    q = request.args.get('q', '').strip()
+    estado = request.args.get('estado', '').strip()
+    min_price = request.args.get('min_price', '').strip()
+    max_price = request.args.get('max_price', '').strip()
+
+    query = """
+        SELECT id, nombre, descripcion, precio, stock, activo, created_at, updated_at
+        FROM productos
+        WHERE 1=1
+    """
+    params = []
+
+    if q:
+        query += " AND nombre LIKE ?"
+        params.append(f"%{q}%")
+
+    if estado in ('0', '1'):
+        query += " AND activo = ?"
+        params.append(int(estado))
+
+    if min_price:
+        try:
+            query += " AND precio >= ?"
+            params.append(float(min_price))
+        except:
+            pass
+
+    if max_price:
+        try:
+            query += " AND precio <= ?"
+            params.append(float(max_price))
+        except:
+            pass
+
+    query += " ORDER BY id DESC"
+
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT id, nombre, descripcion, precio, stock, activo, created_at, updated_at
-            FROM productos
-            ORDER BY id DESC
-        """)
-        rows = cur.fetchall()
+        cur.execute(query, params)
+        productos = cur.fetchall()
         conn.close()
-        return render_template('productos.html', productos=rows, nombre=session.get('user_name', ''))
-    except Exception as e:
+        return render_template('productos.html', productos=productos, nombre=session.get('user_name', ''))
+    except Exception:
         flash('Error cargando productos', 'danger')
         return redirect(url_for('dashboard'))
 
@@ -248,30 +287,33 @@ def productos_nuevo():
         descripcion = request.form.get('descripcion', '').strip()
         precio = request.form.get('precio', '').strip()
         stock = request.form.get('stock', '').strip()
-        activo = 1 if request.form.get('activo') == '1' else 0
+        activo = request.form.get('activo', '1').strip()
 
         errores = []
+
         if not nombre or len(nombre) < 2:
             errores.append("El nombre es obligatorio (mínimo 2 caracteres).")
 
         try:
-            precio_val = float(precio)
-            if precio_val < 0:
+            precio_f = float(precio)
+            if precio_f < 0:
                 errores.append("El precio no puede ser negativo.")
         except:
             errores.append("Precio inválido.")
 
         try:
-            stock_val = int(stock)
-            if stock_val < 0:
+            stock_i = int(stock) if stock != '' else 0
+            if stock_i < 0:
                 errores.append("El stock no puede ser negativo.")
         except:
             errores.append("Stock inválido.")
 
+        activo_i = 1 if activo == '1' else 0
+
         if errores:
-            for err in errores:
-                flash(err, 'danger')
-            return render_template('producto_form.html', modo='crear', producto=None, nombre=session.get('user_name', ''))
+            for e in errores:
+                flash(e, 'danger')
+            return redirect(url_for('productos_nuevo'))
 
         try:
             conn = get_connection()
@@ -279,22 +321,16 @@ def productos_nuevo():
             cur.execute("""
                 INSERT INTO productos (nombre, descripcion, precio, stock, activo, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                nombre,
-                descripcion,
-                precio_val,
-                stock_val,
-                activo,
-                datetime.now().isoformat(sep=' ', timespec='seconds')
-            ))
+            """, (nombre, descripcion, precio_f, stock_i, activo_i, datetime.now().isoformat(sep=' ', timespec='seconds')))
             conn.commit()
             conn.close()
-            flash("Producto creado correctamente", "success")
+            flash("Producto creado correctamente ✅", "success")
             return redirect(url_for('productos_list'))
         except Exception as e:
-            flash("Error al crear el producto", "danger")
+            flash(f"Error al crear producto: {str(e)}", "danger")
+            return redirect(url_for('productos_nuevo'))
 
-    return render_template('producto_form.html', modo='crear', producto=None, nombre=session.get('user_name', ''))
+    return render_template('producto_form.html', modo='nuevo', producto=None)
 
 @app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
 def productos_editar(producto_id):
@@ -304,11 +340,7 @@ def productos_editar(producto_id):
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT id, nombre, descripcion, precio, stock, activo
-            FROM productos
-            WHERE id = ?
-        """, (producto_id,))
+        cur.execute("SELECT * FROM productos WHERE id = ?", (producto_id,))
         producto = cur.fetchone()
 
         if not producto:
@@ -321,56 +353,53 @@ def productos_editar(producto_id):
             descripcion = request.form.get('descripcion', '').strip()
             precio = request.form.get('precio', '').strip()
             stock = request.form.get('stock', '').strip()
-            activo = 1 if request.form.get('activo') == '1' else 0
+            activo = request.form.get('activo', '1').strip()
 
             errores = []
+
             if not nombre or len(nombre) < 2:
                 errores.append("El nombre es obligatorio (mínimo 2 caracteres).")
 
             try:
-                precio_val = float(precio)
-                if precio_val < 0:
+                precio_f = float(precio)
+                if precio_f < 0:
                     errores.append("El precio no puede ser negativo.")
             except:
                 errores.append("Precio inválido.")
 
             try:
-                stock_val = int(stock)
-                if stock_val < 0:
+                stock_i = int(stock) if stock != '' else 0
+                if stock_i < 0:
                     errores.append("El stock no puede ser negativo.")
             except:
                 errores.append("Stock inválido.")
 
+            activo_i = 1 if activo == '1' else 0
+
             if errores:
                 conn.close()
-                for err in errores:
-                    flash(err, 'danger')
-                return render_template('producto_form.html', modo='editar', producto=producto, nombre=session.get('user_name', ''))
+                for e in errores:
+                    flash(e, 'danger')
+                return redirect(url_for('productos_editar', producto_id=producto_id))
 
             cur.execute("""
                 UPDATE productos
                 SET nombre = ?, descripcion = ?, precio = ?, stock = ?, activo = ?, updated_at = ?
                 WHERE id = ?
-            """, (
-                nombre,
-                descripcion,
-                precio_val,
-                stock_val,
-                activo,
-                datetime.now().isoformat(sep=' ', timespec='seconds'),
-                producto_id
-            ))
+            """, (nombre, descripcion, precio_f, stock_i, activo_i,
+                  datetime.now().isoformat(sep=' ', timespec='seconds'),
+                  producto_id))
             conn.commit()
             conn.close()
 
-            flash("Producto actualizado correctamente", "success")
+            flash("Producto actualizado correctamente ✅", "success")
             return redirect(url_for('productos_list'))
 
         conn.close()
-        return render_template('producto_form.html', modo='editar', producto=producto, nombre=session.get('user_name', ''))
+        return render_template('producto_form.html', modo='editar', producto=producto)
 
     except Exception as e:
-        flash("Error al editar el producto", "danger")
+        flash(f"Error cargando producto: {str(e)}", "danger")
         return redirect(url_for('productos_list'))
 
 @app.route('/productos/<int:producto_id>/eliminar', methods=['POST'])
@@ -384,13 +413,13 @@ def productos_eliminar(producto_id):
         cur.execute("DELETE FROM productos WHERE id = ?", (producto_id,))
         conn.commit()
         conn.close()
-        flash("Producto eliminado", "info")
+        flash("Producto eliminado 🗑️", "info")
     except Exception as e:
-        flash("Error al eliminar producto", "danger")
+        flash(f"Error al eliminar: {str(e)}", "danger")
 
     return redirect(url_for('productos_list'))
 
-
+# ==================== MAIN ====================
 if __name__ == '__main__':
     if not os.path.exists('templates'):
         os.makedirs('templates')
