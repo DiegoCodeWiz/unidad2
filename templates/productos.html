@@ -1,471 +1,307 @@
-<!-- templates/productos.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Productos | Panel</title>
+<meta charset="UTF-8">
+<title>Productos</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <style>
-    :root{
-      --green:#2e7d32;
-      --green-2:#43a047;
-      --blue:#0b3a66;
-      --bg:#f4f7f9;
-      --border:#d9e2ef;
-      --text:#2d3436;
-      --muted:#6b7280;
-      --pink-bg:#fde7ef;
-      --pink-border:#f8b4c7;
-      --pink-btn:#f08bb0;
-    }
+<style>
 
-    body{
-      font-family:'Inter',sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
+:root{
+--green:#2e7d32;
+--green2:#43a047;
+--blue:#0b3a66;
+--border:#d9e2ef;
+--bg:#f4f7f9;
+--text:#2d3436;
+--muted:#6b7280;
+}
 
-    .page-wrap{
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:12px;
-      overflow:hidden;
-    }
+body{
+font-family:Arial;
+background:var(--bg);
+margin:0;
+padding:20px;
+}
 
-    .page-header{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      padding:18px 20px 10px 20px;
-    }
+.container{
+background:white;
+border:1px solid var(--border);
+border-radius:10px;
+padding:20px;
+}
 
-    .page-header .avatar{
-      width:52px;height:52px;
-      border-radius:50%;
-      background:#eef2ff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#1e3799;
-      border:1px solid var(--border);
-    }
+h2{
+margin-top:0;
+}
 
-    .page-header h4{
-      margin:0;
-      font-weight:700;
-    }
+.filters{
+display:flex;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:20px;
+}
 
-    .green-line{
-      height:4px;
-      background: var(--green);
-    }
+.filters input,
+.filters select{
+height:35px;
+border:1px solid var(--border);
+border-radius:4px;
+padding:0 10px;
+}
 
-    .filters{
-      padding:18px 20px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:14px 18px;
-      align-items:flex-end;
-    }
+.btn{
+background:var(--green2);
+border:none;
+color:white;
+padding:8px 15px;
+border-radius:4px;
+cursor:pointer;
+text-decoration:none;
+}
 
-    .filter-item{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width: 260px;
-    }
+.btn:hover{
+opacity:.9;
+}
 
-    .filter-item label{
-      width:90px;
-      color: var(--text);
-      font-weight:600;
-      font-size:0.9rem;
-    }
+.btn-outline{
+background:white;
+border:1px solid var(--border);
+color:black;
+}
 
-    .filter-item input,
-    .filter-item select{
-      height:36px;
-      border:1px solid var(--border);
-      border-radius:4px;
-      padding:0 10px;
-      outline:none;
-      min-width: 170px;
-      background:#fff;
-    }
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+}
 
-    .filter-actions{
-      display:flex;
-      gap:10px;
-      margin-left:auto;
-    }
+thead th{
+background:var(--blue);
+color:white;
+padding:10px;
+}
 
-    .btn-green{
-      background: var(--green-2);
-      border: none;
-      color:#fff;
-      height:36px;
-      padding:0 18px;
-      border-radius:4px;
-      font-weight:600;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      text-decoration:none;
-    }
+tbody td{
+padding:10px;
+border-top:1px solid var(--border);
+text-align:center;
+}
 
-    .btn-green:hover{ opacity:.92; color:#fff; }
+tbody tr:nth-child(even){
+background:#fafcff;
+}
 
-    .btn-outline{
-      background:#fff;
-      border:1px solid var(--border);
-      color:#1f2937;
-      height:36px;
-      padding:0 18px;
-      border-radius:4px;
-      font-weight:600;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      text-decoration:none;
-    }
+.badge{
+padding:5px 10px;
+border-radius:20px;
+font-size:12px;
+font-weight:bold;
+}
 
-    .btn-outline:hover{ background:#f8fafc; }
+.activo{
+background:#e8f5e9;
+color:#1b5e20;
+}
 
-    .tools-row{
-      padding: 6px 20px 0 20px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
+.inactivo{
+background:#eee;
+color:#444;
+}
 
-    .btn-plus{
-      width:36px;height:36px;
-      border-radius:6px;
-      background: var(--green-2);
-      color:#fff;
-      border:none;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow: 0 6px 14px rgba(67,160,71,0.2);
-      text-decoration:none;
-    }
+.icon-btn{
+border:none;
+background:white;
+cursor:pointer;
+font-size:16px;
+}
 
-    .btn-plus:hover{ opacity:.92; color:#fff; }
+.icon-btn:hover{
+color:red;
+}
 
-    .results-label{
-      padding: 10px 20px;
-      color:#111827;
-      font-weight:700;
-    }
+/* ===== PAGINACION ===== */
 
-    .table-wrap{
-      padding: 0 20px 10px 20px;
-    }
+.pagination-container{
+margin-top:25px;
+text-align:center;
+}
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      border:1px solid var(--border);
-    }
+.pagination-info{
+font-weight:bold;
+margin-bottom:10px;
+}
 
-    thead th{
-      background: var(--blue);
-      color:#fff;
-      padding:12px 10px;
-      font-size:0.9rem;
-      text-align:center;
-      border-right:1px solid rgba(255,255,255,0.15);
-      font-weight:700;
-    }
+.pagination{
+display:flex;
+justify-content:center;
+gap:8px;
+flex-wrap:wrap;
+}
 
-    tbody td{
-      padding:12px 10px;
-      border-top:1px solid var(--border);
-      border-right:1px solid var(--border);
-      text-align:center;
-      font-size:0.9rem;
-      color:#111827;
-    }
+.pagination a{
+padding:8px 14px;
+border:1px solid var(--border);
+border-radius:8px;
+text-decoration:none;
+color:var(--text);
+background:white;
+}
 
-    tbody tr:nth-child(even){ background:#fafcff; }
+.pagination a:hover{
+border-color:var(--green);
+}
 
-    .badge-status{
-      padding:6px 10px;
-      border-radius:999px;
-      font-weight:700;
-      font-size:0.8rem;
-      display:inline-block;
-      border:1px solid var(--border);
-    }
+.pagination .active{
+background:var(--green);
+color:white;
+border-color:var(--green);
+}
 
-    .active-badge{ background:#e8f5e9; color:#1b5e20; border-color:#c8e6c9; }
-    .inactive-badge{ background:#f3f4f6; color:#374151; border-color:#e5e7eb; }
+.pagination .disabled{
+opacity:0.4;
+pointer-events:none;
+}
 
-    .icon-btn{
-      width:34px;height:34px;
-      border-radius:6px;
-      border:1px solid var(--border);
-      background:#fff;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      text-decoration:none;
-    }
-    .icon-btn:hover{ background:#f8fafc; }
-
-    /* ===== PAGINACIÓN (como tu imagen) ===== */
-    .pager-zone{
-      background: var(--pink-bg);
-      border-top:1px solid var(--pink-border);
-      padding: 18px 20px;
-    }
-
-    .pager-top{
-      text-align:center;
-      font-weight:700;
-      color:#a14c6a;
-      margin-bottom:12px;
-    }
-
-    .pager{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .pager a, .pager span{
-      height:42px;
-      min-width: 56px;
-      padding: 0 14px;
-      border-radius:12px;
-      border:1px solid rgba(240,139,176,0.45);
-      background:#fff;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      color:#a14c6a;
-      text-decoration:none;
-    }
-
-    .pager a:hover{
-      background:#fff;
-      border-color: var(--pink-btn);
-      box-shadow: 0 8px 18px rgba(240,139,176,0.22);
-    }
-
-    .pager .num{
-      min-width:44px;
-    }
-
-    .pager .active{
-      background: linear-gradient(180deg, #f7a0c2, #f08bb0);
-      color:#fff;
-      border-color: var(--pink-btn);
-      box-shadow: 0 10px 22px rgba(240,139,176,0.28);
-    }
-
-    .pager .disabled{
-      opacity:0.45;
-      pointer-events:none;
-    }
-
-    @media (max-width: 900px){
-      .filter-actions{ width:100%; margin-left:0; }
-      .filter-item{ min-width: 100%; }
-      .filter-item label{ width:110px; }
-      .filter-item input, .filter-item select{ width:100%; min-width: 0; }
-    }
-  </style>
+</style>
 </head>
 
-<body class="p-3 p-md-4">
+<body>
 
 <div class="container">
-  <div class="page-wrap">
 
-    <div class="page-header">
-      <div class="avatar"><i class="fa-solid fa-box"></i></div>
-      <h4>Productos</h4>
-    </div>
-    <div class="green-line"></div>
+<h2>Productos</h2>
 
-    <!-- FILTROS -->
-    <form method="GET" action="{{ url_for('productos_list') }}" class="filters">
-      <div class="filter-item">
-        <label>Nombre:</label>
-        <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar producto...">
-      </div>
+<form class="filters" method="GET">
 
-      <div class="filter-item">
-        <label>Estado:</label>
-        {% set estado = request.args.get('estado','') %}
-        <select name="estado">
-          <option value="" {% if estado=='' %}selected{% endif %}>Todos</option>
-          <option value="1" {% if estado=='1' %}selected{% endif %}>Activo</option>
-          <option value="0" {% if estado=='0' %}selected{% endif %}>Inactivo</option>
-        </select>
-      </div>
+<input type="text" name="q" placeholder="Buscar producto"
+value="{{ request.args.get('q','') }}">
 
-      <div class="filter-item">
-        <label>Precio:</label>
-        <div class="d-flex gap-2" style="width:100%;">
-          <input type="number" step="0.01" min="0" name="min_price"
-                 value="{{ request.args.get('min_price','') }}" placeholder="Min" style="width:100%;">
-          <input type="number" step="0.01" min="0" name="max_price"
-                 value="{{ request.args.get('max_price','') }}" placeholder="Max" style="width:100%;">
-        </div>
-      </div>
+<select name="estado">
+<option value="">Todos</option>
+<option value="1">Activo</option>
+<option value="0">Inactivo</option>
+</select>
 
-      <div class="filter-actions">
-        <button type="submit" class="btn-green">
-          <i class="fa-solid fa-magnifying-glass"></i> Buscar
-        </button>
+<input type="number" name="min_price" placeholder="Precio min"
+value="{{ request.args.get('min_price','') }}">
 
-        <a href="{{ url_for('productos_list') }}" class="btn-outline">
-          <i class="fa-solid fa-eraser"></i> Limpiar
-        </a>
-      </div>
-    </form>
+<input type="number" name="max_price" placeholder="Precio max"
+value="{{ request.args.get('max_price','') }}">
 
-    <!-- BOTÓN + -->
-    <div class="tools-row">
-      <a class="btn-plus" href="{{ url_for('productos_nuevo') }}" title="Nuevo Producto">
-        <i class="fa-solid fa-plus"></i>
-      </a>
-    </div>
+<button class="btn">Buscar</button>
 
-    <div class="results-label">[Resultados]</div>
+<a href="{{ url_for('productos_list') }}" class="btn btn-outline">Limpiar</a>
 
-    <div class="table-wrap">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} py-2 small">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+</form>
 
-      <table>
-        <thead>
-          <tr>
-            <!-- ✅ SIN ID -->
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Estado</th>
-            <th>Editar</th>
-            <th>Eliminar</th>
-          </tr>
-        </thead>
+<a class="btn" href="{{ url_for('productos_nuevo') }}">
+<i class="fa fa-plus"></i> Nuevo producto
+</a>
 
-        <tbody>
-          {% for p in productos %}
-            <tr>
-              <td style="text-align:left;">
-                <div style="font-weight:700;">{{ p['nombre'] }}</div>
-                <div style="color:var(--muted); font-size:0.85rem;">
-                  {{ p['descripcion'] }}
-                </div>
-              </td>
+<table>
 
-              <td>${{ '%.2f'|format(p['precio']) }}</td>
-              <td>{{ p['stock'] }}</td>
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Precio</th>
+<th>Stock</th>
+<th>Estado</th>
+<th>Editar</th>
+<th>Eliminar</th>
+</tr>
+</thead>
 
-              <td>
-                {% if p['activo'] == 1 %}
-                  <span class="badge-status active-badge">Activo</span>
-                {% else %}
-                  <span class="badge-status inactive-badge">Inactivo</span>
-                {% endif %}
-              </td>
+<tbody>
 
-              <td>
-                <a class="icon-btn"
-                   href="{{ url_for('productos_editar', producto_id=p['id']) }}"
-                   title="Editar">
-                  <i class="fa-solid fa-pen-to-square"></i>
-                </a>
-              </td>
+{% for p in productos %}
 
-              <td>
-                <form method="POST"
-                      action="{{ url_for('productos_eliminar', producto_id=p['id']) }}"
-                      onsubmit="return confirm('¿Eliminar este producto?');"
-                      style="display:inline;">
-                  <button type="submit" class="icon-btn" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="6" style="padding:20px; color:var(--muted);">
-                No hay productos registrados.
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<tr>
 
-    <!-- ===== PAGINACIÓN (como tu imagen) ===== -->
-    <div class="pager-zone">
-      <div class="pager-top">
-        Página {{ page }} de {{ total_pages }} — {{ total }} registro(s)
-      </div>
+<td style="text-align:left">
+<strong>{{ p['nombre'] }}</strong><br>
+<span style="color:var(--muted);font-size:12px">
+{{ p['descripcion'] }}
+</span>
+</td>
 
-      {% set q = request.args.get('q','') %}
-      {% set estado = request.args.get('estado','') %}
-      {% set min_price = request.args.get('min_price','') %}
-      {% set max_price = request.args.get('max_price','') %}
+<td>${{ '%.2f'|format(p['precio']) }}</td>
 
-      <div class="pager">
-        <!-- Primera -->
-        <a class="{% if page<=1 %}disabled{% endif %}"
-           href="{{ url_for('productos_list', page=1, q=q, estado=estado, min_price=min_price, max_price=max_price) }}">
-          « Primera
-        </a>
+<td>{{ p['stock'] }}</td>
 
-        <!-- Anterior -->
-        <a class="{% if page<=1 %}disabled{% endif %}"
-           href="{{ url_for('productos_list', page=page-1, q=q, estado=estado, min_price=min_price, max_price=max_price) }}">
-          ‹ Anterior
-        </a>
+<td>
 
-        <!-- Números -->
-        {% for i in range(1, total_pages+1) %}
-          <a class="num {% if i==page %}active{% endif %}"
-             href="{{ url_for('productos_list', page=i, q=q, estado=estado, min_price=min_price, max_price=max_price) }}">
-            {{ i }}
-          </a>
-        {% endfor %}
+{% if p['activo']==1 %}
+<span class="badge activo">Activo</span>
+{% else %}
+<span class="badge inactivo">Inactivo</span>
+{% endif %}
 
-        <!-- Siguiente -->
-        <a class="{% if page>=total_pages %}disabled{% endif %}"
-           href="{{ url_for('productos_list', page=page+1, q=q, estado=estado, min_price=min_price, max_price=max_price) }}">
-          Siguiente ›
-        </a>
+</td>
 
-        <!-- Última -->
-        <a class="{% if page>=total_pages %}disabled{% endif %}"
-           href="{{ url_for('productos_list', page=total_pages, q=q, estado=estado, min_price=min_price, max_price=max_price) }}">
-          Última »
-        </a>
-      </div>
-    </div>
+<td>
+<a href="{{ url_for('productos_editar', producto_id=p['id']) }}">
+<i class="fa fa-pen icon-btn"></i>
+</a>
+</td>
 
-  </div>
+<td>
+
+<form method="POST"
+action="{{ url_for('productos_eliminar', producto_id=p['id']) }}"
+onsubmit="return confirm('Eliminar producto?')">
+
+<button class="icon-btn">
+<i class="fa fa-trash"></i>
+</button>
+
+</form>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+
+<!-- PAGINACION -->
+
+<div class="pagination-container">
+
+<div class="pagination-info">
+Página {{ page }} de {{ total_pages }} — {{ total }} registros
+</div>
+
+<div class="pagination">
+
+<a class="{% if page<=1 %}disabled{% endif %}"
+href="{{ url_for('productos_list',page=1) }}">Primera</a>
+
+<a class="{% if page<=1 %}disabled{% endif %}"
+href="{{ url_for('productos_list',page=page-1) }}">Anterior</a>
+
+{% for i in range(1,total_pages+1) %}
+
+<a class="{% if i==page %}active{% endif %}"
+href="{{ url_for('productos_list',page=i) }}">{{ i }}</a>
+
+{% endfor %}
+
+<a class="{% if page>=total_pages %}disabled{% endif %}"
+href="{{ url_for('productos_list',page=page+1) }}">Siguiente</a>
+
+<a class="{% if page>=total_pages %}disabled{% endif %}"
+href="{{ url_for('productos_list',page=total_pages) }}">Última</a>
+
+</div>
+
+</div>
+
 </div>
 
 </body>
